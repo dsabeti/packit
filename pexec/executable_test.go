@@ -53,6 +53,16 @@ func testPexec(t *testing.T, context spec.G, it spec.S) {
 			Expect(stdout.String()).To(ContainSubstring(fmt.Sprintf("Arguments: [%s something]", fakeCLI)))
 		})
 
+		it("saves the exit code", func() {
+			err := executable.Execute(pexec.Execution{
+				Args:   []string{"something"},
+				Stdout: stdout,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(executable.ExitCode()).To(Equal(0))
+		})
+
 		context("when given a execution directory", func() {
 			it("executes within that directory", func() {
 				err := executable.Execute(pexec.Execution{
@@ -164,6 +174,17 @@ func testPexec(t *testing.T, context spec.G, it spec.S) {
 					Expect(err).To(MatchError("exit status 1"))
 					Expect(stdout).To(ContainSubstring("Error on stdout"))
 					Expect(stderr).To(ContainSubstring("Error on stderr"))
+				})
+
+				it("sets the exit code", func() {
+					err := executable.Execute(pexec.Execution{
+						Args:   []string{"something"},
+						Stdout: stdout,
+						Stderr: stderr,
+					})
+
+					Expect(err).To(MatchError("exit status 1"))
+					Expect(executable.ExitCode()).To(Equal(1))
 				})
 			})
 		})

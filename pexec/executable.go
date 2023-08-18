@@ -9,7 +9,8 @@ import (
 
 // Executable represents an executable on the $PATH.
 type Executable struct {
-	name string
+	name     string
+	exitCode int
 }
 
 // NewExecutable returns an instance of an Executable given the name of that
@@ -22,8 +23,12 @@ func NewExecutable(name string) Executable {
 	}
 }
 
+func (e *Executable) ExitCode() int {
+	return e.exitCode
+}
+
 // Execute invokes the executable with a set of Execution arguments.
-func (e Executable) Execute(execution Execution) error {
+func (e *Executable) Execute(execution Execution) error {
 	envPath := os.Getenv("PATH")
 
 	if execution.Env != nil {
@@ -59,7 +64,14 @@ func (e Executable) Execute(execution Execution) error {
 	cmd.Stderr = execution.Stderr
 	cmd.Stdin = execution.Stdin
 
-	return cmd.Run()
+	err = cmd.Run()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			e.exitCode = exitError.ExitCode()
+		}
+	}
+
+	return err
 }
 
 // Execution is the set of configurable options for a given execution of the
